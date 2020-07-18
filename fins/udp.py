@@ -32,7 +32,7 @@ class UDPFinsConnection(FinsConnection):
             print(err)
         return response
 
-    def connect(self, IP_Address, Port=9600):
+    def connect(self, IP_Address, Port=9600, Bind_Port=9600):
         """Establish a connection for FINS communications
 
         :param IP_Address: The IP address of the device you are connecting to
@@ -40,7 +40,7 @@ class UDPFinsConnection(FinsConnection):
         """
         self.fins_port=Port
         self.ip_address=IP_Address
-        self.fins_socket.bind(('',Port))
+        self.fins_socket.bind(('',Bind_Port))
         self.fins_socket.settimeout(1.0)
 
     def __del__(self):
