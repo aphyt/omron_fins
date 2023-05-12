@@ -25,7 +25,7 @@ class UDPFinsConnection(FinsConnection):
         :return: :raise:
         """
         response = ""
-        self.fins_socket.sendto(fins_command_frame,(self.ip_address,9600))
+        self.fins_socket.sendto(fins_command_frame, (self.ip_address, self.fins_port))
         try:
             response=self.fins_socket.recv(self.BUFFER_SIZE)
         except Exception as err:
