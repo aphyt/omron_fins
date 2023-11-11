@@ -6,6 +6,96 @@ __email__ = "jr@aphyt.com"
 from abc import ABCMeta, abstractmethod
 
 
+def reverse_word_order(data: bytes):
+    """
+    This function will reverse word order in byte string. It is helpful because FINS reads come in from low to high
+    bytes, but since the data is represented as big-endian, the word order of bytes needs to be reversed after reading
+    and before writing data.
+    """
+    reversed_bytes = data[::-1]
+    reversed_words = b''
+    for i in range(0, len(reversed_bytes), 2):
+        reversed_words += reversed_bytes[i+1].to_bytes(1, 'big') + reversed_bytes[i].to_bytes(1, 'big')
+    return reversed_words
+
+
+class FinsHeader:
+    def __init__(self):
+        self.icf = b'\x00'
+        self.rsv = b'\x00'
+        self.gct = b'\x00'
+        self.dna = b'\x00'
+        self.da1 = b'\x00'
+        self.da2 = b'\x00'
+        self.sna = b'\x00'
+        self.sa1 = b'\x00'
+        self.sa2 = b'\x00'
+        self.sid = b'\x00'
+
+    def set(self, icf, rsv, gct, dna, da1, da2, sna, sa1, sa2, sid):
+        self.icf = icf
+        self.rsv = rsv
+        self.gct = gct
+        self.dna = dna
+        self.da1 = da1
+        self.da2 = da2
+        self.sna = sna
+        self.sa1 = sa1
+        self.sa2 = sa2
+        self.sid = sid
+
+    def bytes(self):
+        response = (self.icf + self.rsv + self.gct +
+                    self.dna + self.da1 + self.da2 +
+                    self.sna + self.sa1 + self.sa2 +
+                    self.sid)
+        return response
+
+    def from_bytes(self, data: bytes):
+        self.icf = data[0]
+        self.rsv = data[1]
+        self.gct = data[2]
+        self.dna = data[3]
+        self.da1 = data[4]
+        self.da2 = data[5]
+        self.sna = data[6]
+        self.sa1 = data[7]
+        self.sa2 = data[8]
+        self.sid = data[9]
+
+
+class FinsCommandFrame:
+    def __init__(self):
+        self.header = FinsHeader()
+        self.command_code = b'\x00\x00'
+        self.text = b''
+
+    def bytes(self):
+        return self.header.bytes() + self.command_code + self.text
+
+    def from_bytes(self, data: bytes):
+        self.header.from_bytes(data[0:10])
+        self.command_code = data[10:12]
+        self.text = data[12:]
+
+
+class FinsResponseFrame:
+    def __init__(self):
+        self.header = FinsHeader()
+        self.command_code = b'\x00\x00'
+        self.end_code = b'\x00\x00'
+        self.text = b''
+
+    def bytes(self):
+        return self.header.bytes() + self.command_code + self.end_code + self.text
+
+    def from_bytes(self, data: bytes):
+        self.header.from_bytes(data[0:10])
+        self.command_code = data[10:12]
+        self.end_code = data[12:14]
+        self.text = data[14:]
+
+
 class FinsPLCMemoryAreas:
     def __init__(self):
         """Hex code for memory areas
@@ -247,8 +337,9 @@ class FinsConnection(metaclass=ABCMeta):
         """Function to write PLC memory areas
 
         :param memory_area_code: Memory area to write
-        :param beginning_address: Beginning address
+        :param beginning_address: First two bytes represent word address and last byte is the bit address
         :param write_bytes: The bytes to write
+        :param number_of_items: The number of words
         :return: response
         """
         assert len(beginning_address) == 3
