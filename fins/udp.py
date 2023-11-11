@@ -4,7 +4,7 @@ __maintainer__ = "Joseph Ryan"
 __email__ = "jr@aphyt.com"
 
 import socket
-from fins import FinsConnection
+from .fins_common import *
 
 
 class UDPFinsConnection(FinsConnection):
@@ -31,15 +31,15 @@ class UDPFinsConnection(FinsConnection):
         response, address = self.fins_socket.recvfrom(self.BUFFER_SIZE)
         return response
 
-    def connect(self, IP_Address, Port=9600, Bind_Port=9600):
+    def connect(self, ip_address, port=9600, bind_port=9600):
         """Establish a connection for FINS communications
 
-        :param IP_Address: The IP address of the device you are connecting to
-        :param Port: The port that the device and host should listen on (default 9600)
+        :param ip_address: The IP address of the device you are connecting to
+        :param port: The port that the device and host should listen on (default 9600)
         """
-        self.fins_port = Port
-        self.ip_address = IP_Address
-        self.fins_socket.bind(('', Bind_Port))
+        self.fins_port = port
+        self.ip_address = ip_address
+        self.fins_socket.bind(('', bind_port))
         self.fins_socket.settimeout(1.0)
 
     def __del__(self):

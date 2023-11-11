@@ -7,7 +7,7 @@ import binascii
 import socket
 import errno
 import time
-from fins import FinsConnection
+from .fins_common import *
 
 
 class TCPFinsMessage:
