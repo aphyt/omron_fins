@@ -290,12 +290,35 @@ class FinsConnection(metaclass=ABCMeta):
             value = struct.unpack(_format, data)[0]
         return value
 
+    def set_values(self, _format: str, read_area: bytes, begin_address,
+                   words_per_value: int, value):
+        fins_response = FinsResponseFrame()
+        if isinstance(value, list):
+            number_of_values = len(value)
+        else:
+            number_of_values = 1
+        number_of_words = number_of_values * words_per_value
+        bytes_per_value = words_per_value * 2
+        if number_of_values > 1:
+            value_data = b''
+            for i in range(number_of_values):
+                single_value_data = struct.pack(_format, value[i])
+                single_value_data = reverse_word_order(single_value_data)
+                value_data += single_value_data
+            data = value_data
+        else:
+            data = struct.pack(_format, value)
+            data = reverse_word_order(data)
+        response = self.memory_area_write(read_area, begin_address, data, number_of_words)
+        fins_response.from_bytes(response)
+        return fins_response
+
     def read(self, memory_area: str, word_address: int,
-             bit_address: int = 0, data_type: str = 'w', number_of_values: int = 1):
+             data_type: str = 'w', number_of_values: int = 1):
         """
         Data Type Should Specify How to Interpret Data
         b BOOL (bit),
-        ui UINT (one-word unsigned binary), ud UDINT (two-word unsigned binary), ul ULINT (four-word unsigned binary),
+        ui UINT (one-word unsigned binary), udi UDINT (two-word unsigned binary), uli ULINT (four-word unsigned binary),
         i INT (one-word signed binary), d DINT (two-word signed binary), l LINT (four-word signed binary),
         uibcd UINT BCD (one-word unsigned binary), udbcd UDINT BCD (two-word signed binary),
         ulbcd ULINT BCD (four-word signed binary),
@@ -308,25 +331,119 @@ class FinsConnection(metaclass=ABCMeta):
         w work area, c cio area, d data memory h holding
         """
         fins_memory_area_instance = FinsPLCMemoryAreas()
+        bit_address = 0
         begin_address = word_address.to_bytes(2, 'big') + bit_address.to_bytes(1, 'big')
         read_area = None
-        if memory_area == 'w' and data_type != 'b':
+        if memory_area == 'w':
             read_area = fins_memory_area_instance.WORK_WORD
-        elif memory_area == 'c' and data_type != 'b':
+        elif memory_area == 'c':
             read_area = fins_memory_area_instance.CIO_WORD
-        elif memory_area == 'd' and data_type != 'b':
+        elif memory_area == 'd':
             read_area = fins_memory_area_instance.DATA_MEMORY_WORD
-        elif memory_area == 'h' and data_type != 'b':
+        elif memory_area == 'h':
             read_area = fins_memory_area_instance.HOLDING_WORD
 
         if data_type == 'r':
+            """Real Data Type"""
             value = self.get_values('>f', read_area, begin_address, 2, number_of_values)
             return value
+        elif data_type == 'l':
+            """Long Real Data Type"""
+            value = self.get_values('>d', read_area, begin_address, 4, number_of_values)
+            return value
+        elif data_type == 'i':
+            value = self.get_values('>h', read_area, begin_address, 1, number_of_values)
+            return value
+        elif data_type == 'di':
+            value = self.get_values('>i', read_area, begin_address, 2, number_of_values)
+            return value
+        elif data_type == 'li':
+            value = self.get_values('>q', read_area, begin_address, 4, number_of_values)
+            return value
+        elif data_type == 'ui':
+            value = self.get_values('>H', read_area, begin_address, 1, number_of_values)
+            return value
+        elif data_type == 'udi':
+            value = self.get_values('>I', read_area, begin_address, 2, number_of_values)
+            return value
+        elif data_type == 'uli':
+            value = self.get_values('>Q', read_area, begin_address, 4, number_of_values)
+            return value
+        elif data_type == 'w':
+            value = self.get_values('2s', read_area, begin_address, 1, number_of_values)
+            return value
+        elif data_type == 'dw':
+            value = self.get_values('4s', read_area, begin_address, 2, number_of_values)
+            return value
+        elif data_type == 'lw':
+            value = self.get_values(f'8s', read_area, begin_address, 4, number_of_values)
+            return value
 
-    def write(self, memory_area: str, word_address: int,
-              bit_address: int, data_type: str, number_of_values: int,
-              value):
-        pass
+    def write(self, value, memory_area: str, word_address: int,
+              data_type: str = 'w'):
+        """
+        Data Type Should Specify How to Interpret Data
+        b BOOL (bit),
+        ui UINT (one-word unsigned binary), udi UDINT (two-word unsigned binary), uli ULINT (four-word unsigned binary),
+        i INT (one-word signed binary), d DINT (two-word signed binary), l LINT (four-word signed binary),
+        uibcd UINT BCD (one-word unsigned binary), udbcd UDINT BCD (two-word signed binary),
+        ulbcd ULINT BCD (four-word signed binary),
+        r REAL (two-word floating point), l LREAL (four-word floating point),
+        c CHANNEL (word), n NUMBER (constant or number),
+        w WORD (one-word hexadecimal), dw WORD (two-word hexadecimal), lw LWORD (four-word hexadecimal),
+        str STRING (character string: 1 to 255 ASCII characters),
+        tim TIMER, cnt COUNTER
+
+        w work area, c cio area, d data memory h holding
+        """
+        bit_address = 0
+        fins_memory_area_instance = FinsPLCMemoryAreas()
+        begin_address = word_address.to_bytes(2, 'big') + bit_address.to_bytes(1, 'big')
+        read_area = None
+        if memory_area == 'w':
+            read_area = fins_memory_area_instance.WORK_WORD
+        elif memory_area == 'c':
+            read_area = fins_memory_area_instance.CIO_WORD
+        elif memory_area == 'd':
+            read_area = fins_memory_area_instance.DATA_MEMORY_WORD
+        elif memory_area == 'h':
+            read_area = fins_memory_area_instance.HOLDING_WORD
+
+        if data_type == 'r':
+            """Real Data Type"""
+            value = self.set_values('>f', read_area, begin_address, 2, value)
+            return value
+        elif data_type == 'l':
+            """Long Real Data Type"""
+            value = self.set_values('>d', read_area, begin_address, 4, value)
+            return value
+        elif data_type == 'i':
+            value = self.set_values('>h', read_area, begin_address, 1, value)
+            return value
+        elif data_type == 'di':
+            value = self.set_values('>i', read_area, begin_address, 2, value)
+            return value
+        elif data_type == 'li':
+            value = self.set_values('>q', read_area, begin_address, 4, value)
+            return value
+        elif data_type == 'ui':
+            value = self.set_values('>H', read_area, begin_address, 1, value)
+            return value
+        elif data_type == 'udi':
+            value = self.set_values('>I', read_area, begin_address, 2, value)
+            return value
+        elif data_type == 'uli':
+            value = self.set_values('>Q', read_area, begin_address, 4, value)
+            return value
+        elif data_type == 'w':
+            value = self.set_values('2s', read_area, begin_address, 1, value)
+            return value
+        elif data_type == 'dw':
+            value = self.set_values('4s', read_area, begin_address, 2, value)
+            return value
+        elif data_type == 'lw':
+            value = self.set_values(f'8s', read_area, begin_address, 4, value)
+            return value
 
     def plc_program_to_file(self, filename, number_of_read_bytes=992):
         """Read the program from the connected FINS device

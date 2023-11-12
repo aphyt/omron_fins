@@ -9,7 +9,7 @@ Ethernet based CP/CS/CJ processors, but as stated in the license, this code is p
 responsible for determining suitability.
 
 If you're interested in trying it out, or just taking a look at it to see how the FINS protocol works, you can download
-it from my [Bitbucket Page](https://bitbucket.org/jryan/finsgit).
+it from my [GitHub Page](https://github.com/aphyt/omron_fins).
 
 ### Examples
 
