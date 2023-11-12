@@ -4,6 +4,7 @@ __maintainer__ = "Joseph Ryan"
 __email__ = "jr@aphyt.com"
 
 import struct
+import time
 from abc import ABCMeta, abstractmethod
 
 
@@ -445,11 +446,11 @@ class FinsConnection(metaclass=ABCMeta):
             value = self.set_values(f'8s', read_area, begin_address, 4, value)
             return value
 
-    def plc_program_to_file(self, filename, number_of_read_bytes=992):
+    def plc_program_to_file(self, filename, number_of_read_bytes=400):
         """Read the program from the connected FINS device
 
         :param filename: Filename to write the program from the FINS device
-        :param number_of_read_bytes: Bytes to read from the device per cycle(default 992)
+        :param number_of_read_bytes: Bytes to read from the device per cycle(default 400)
         """
         program_buffer = b''
         output_file = open(filename, 'wb')
@@ -467,11 +468,11 @@ class FinsConnection(metaclass=ABCMeta):
             current_word += number_of_read_bytes
         output_file.write(program_buffer)
 
-    def file_to_plc_program(self, filename, number_of_write_bytes=992):
+    def file_to_plc_program(self, filename, number_of_write_bytes=400):
         """Write a stored hex program to the connected FINS device
 
         :param filename: Filename to write the program from the FINS device
-        :param number_of_write_bytes: Bytes to write per cycle(default 992)
+        :param number_of_write_bytes: Bytes to write per cycle(default 400)
         """
         program_buffer = b''
         input_file = open(filename, 'rb')

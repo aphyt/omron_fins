@@ -11,6 +11,8 @@ responsible for determining suitability.
 If you're interested in trying it out, or just taking a look at it to see how the FINS protocol works, you can download
 it from my [GitHub Page](https://github.com/aphyt/omron_fins).
 
+[documentation](https://github.com/aphyt/omron_fins/tree/master/docs)
+
 ### Examples
 
 The following program demonstrates the most common application, which is reading and writing to memory areas. The
