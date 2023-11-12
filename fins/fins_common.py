@@ -3,6 +3,7 @@ __license__ = "GPLv2"
 __maintainer__ = "Joseph Ryan"
 __email__ = "jr@aphyt.com"
 
+import struct
 from abc import ABCMeta, abstractmethod
 
 
@@ -268,6 +269,64 @@ class FinsConnection(metaclass=ABCMeta):
                         self.srce_node_add.to_bytes(1, 'big') + self.srce_unit_add.to_bytes(1, 'big') + \
                         service_id + command_code + text
         return command_bytes
+
+    def get_values(self, _format: str, read_area: bytes, begin_address,
+                   words_per_value: int, number_of_values: int = 1):
+        fins_response = FinsResponseFrame()
+        number_of_words = number_of_values * words_per_value
+        response = self.memory_area_read(read_area, begin_address, number_of_words)
+        fins_response.from_bytes(response)
+        data = fins_response.text
+        bytes_per_value = words_per_value * 2
+        if number_of_values > 1:
+            value = []
+            for i in range(number_of_values):
+                value_data = data[i * bytes_per_value: i * bytes_per_value + bytes_per_value]
+                value_data = reverse_word_order(value_data)
+                single_value = struct.unpack(_format, value_data)[0]
+                value.append(single_value)
+        else:
+            data = reverse_word_order(data)
+            value = struct.unpack(_format, data)[0]
+        return value
+
+    def read(self, memory_area: str, word_address: int,
+             bit_address: int = 0, data_type: str = 'w', number_of_values: int = 1):
+        """
+        Data Type Should Specify How to Interpret Data
+        b BOOL (bit),
+        ui UINT (one-word unsigned binary), ud UDINT (two-word unsigned binary), ul ULINT (four-word unsigned binary),
+        i INT (one-word signed binary), d DINT (two-word signed binary), l LINT (four-word signed binary),
+        uibcd UINT BCD (one-word unsigned binary), udbcd UDINT BCD (two-word signed binary),
+        ulbcd ULINT BCD (four-word signed binary),
+        r REAL (two-word floating point), l LREAL (four-word floating point),
+        c CHANNEL (word), n NUMBER (constant or number),
+        w WORD (one-word hexadecimal), dw WORD (two-word hexadecimal), lw LWORD (four-word hexadecimal),
+        str STRING (character string: 1 to 255 ASCII characters),
+        tim TIMER, cnt COUNTER
+
+        w work area, c cio area, d data memory h holding
+        """
+        fins_memory_area_instance = FinsPLCMemoryAreas()
+        begin_address = word_address.to_bytes(2, 'big') + bit_address.to_bytes(1, 'big')
+        read_area = None
+        if memory_area == 'w' and data_type != 'b':
+            read_area = fins_memory_area_instance.WORK_WORD
+        elif memory_area == 'c' and data_type != 'b':
+            read_area = fins_memory_area_instance.CIO_WORD
+        elif memory_area == 'd' and data_type != 'b':
+            read_area = fins_memory_area_instance.DATA_MEMORY_WORD
+        elif memory_area == 'h' and data_type != 'b':
+            read_area = fins_memory_area_instance.HOLDING_WORD
+
+        if data_type == 'r':
+            value = self.get_values('>f', read_area, begin_address, 2, number_of_values)
+            return value
+
+    def write(self, memory_area: str, word_address: int,
+              bit_address: int, data_type: str, number_of_values: int,
+              value):
+        pass
 
     def plc_program_to_file(self, filename, number_of_read_bytes=992):
         """Read the program from the connected FINS device
