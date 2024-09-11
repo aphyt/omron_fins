@@ -76,17 +76,22 @@ class TCPFinsConnection(FinsConnection):
         response = self.fins_frame_send(fins_command_frame)
         return response
 
-    def connect(self, ip_address, port=9600, bind_port=9600):
+    def connect(self, ip_address, port=9600, bind_port=9600, connection_timeout: float = None):
         """Establish a connection for FINS communications
 
         :param ip_address: The IP address of the device you are connecting to
         :param port: The port that the client connects to on the server (default 9600)
         :param bind_port: The port that the client should listen on (default 9600)
+        :param connection_timeout: Custom connection timeout
         """
         self.fins_port = port
         self.ip_address = ip_address
         self.bind_port = bind_port
+        old_timeout = self.fins_socket.gettimeout()
+        if connection_timeout is not None:
+            self.fins_socket.settimeout(connection_timeout)
         self.fins_socket.connect((self.ip_address, self.fins_port))
+        self.fins_socket.settimeout(old_timeout)
         self.node_address_data_send()
         
     def __del__(self):
