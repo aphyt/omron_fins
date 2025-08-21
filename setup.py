@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="fins",
-    version="1.0.4",
+    version="1.0.5",
     author="Joseph Ryan",
     author_email="jr@aphyt.com",
     description="A library to communicate with Omron controllers using Factory Intelligent Network Service (FINS)",

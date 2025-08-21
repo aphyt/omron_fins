@@ -26,7 +26,7 @@ class TCPFinsMessage:
         return message_bytes
 
     def from_bytes(self, data: bytes):
-        self.command = data[4:8]
+        self.command = data[8:12]
         self.error_code = data[12:16]
         self.data = data[16:]
 

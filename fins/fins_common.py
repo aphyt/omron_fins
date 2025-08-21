@@ -54,16 +54,16 @@ class FinsHeader:
         return response
 
     def from_bytes(self, data: bytes):
-        self.icf = data[0]
-        self.rsv = data[1]
-        self.gct = data[2]
-        self.dna = data[3]
-        self.da1 = data[4]
-        self.da2 = data[5]
-        self.sna = data[6]
-        self.sa1 = data[7]
-        self.sa2 = data[8]
-        self.sid = data[9]
+        self.icf = data[0:1]
+        self.rsv = data[1:2]
+        self.gct = data[2:3]
+        self.dna = data[3:4]
+        self.da1 = data[4:5]
+        self.da2 = data[5:6]
+        self.sna = data[6:7]
+        self.sa1 = data[7:8]
+        self.sa2 = data[8:9]
+        self.sid = data[9:10]
 
 
 class FinsCommandFrame:
